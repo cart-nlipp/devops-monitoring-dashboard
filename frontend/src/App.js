@@ -9,7 +9,7 @@ function App() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/metrics-data");
+        const res = await axios.get("https://devops-monitoring-dashboard-x85t.onrender.com/metrics-data");
         setMetrics(res.data);
         setHistory(prev => [...prev.slice(-10), {
           time: new Date().toLocaleTimeString(),
