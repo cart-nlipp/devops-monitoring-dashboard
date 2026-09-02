@@ -5,7 +5,7 @@ using Prometheus for metrics collection and Grafana for visualization.
 CI/CD automated via GitHub Actions, deployed on Render.
 
 ## Tech Stack
-- Backend: [your actual language — Node/Python/whatever]
+- Backend: Node.js (Express)
 - Monitoring: Prometheus, Grafana
 - CI/CD: GitHub Actions
 - Deployment: Render
@@ -24,9 +24,6 @@ cd devops-monitoring-dashboard
 docker-compose up
 \`\`\`
 
-## Screenshots
-[Add a screenshot of your Grafana dashboard here — this matters more than text]
-
 ## What I Learned
-[2-3 lines — e.g., "Learned how to configure Prometheus scrape targets, 
-set up CI/CD triggers on push, and containerize multi-service apps."]
+Learned how to configure Prometheus scrape targets, set up CI/CD triggers 
+on push, and containerize a multi-service application using Docker Compose.
