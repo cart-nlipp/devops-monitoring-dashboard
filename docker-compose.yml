@@ -35,6 +35,12 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin123
 
+  node-exporter:                          
+    image: prom/node-exporter:v1.8.2      
+    container_name: node-exporter        
+    ports:                                
+      - "9100:9100"                       
+
 configs:
   prometheus_config:
     content: |
@@ -44,3 +50,6 @@ configs:
         - job_name: 'node-backend'
           static_configs:
             - targets: ['dashboard-backend:5000']
+        - job_name: 'node-exporter'       
+          static_configs:                   
+            - targets: ['node-exporter:9100']  
