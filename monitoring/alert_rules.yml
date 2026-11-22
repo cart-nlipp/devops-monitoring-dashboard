@@ -1,0 +1,29 @@
+groups:
+  - name: devops-monitoring-alerts
+    rules:
+      - alert: BackendMonitoringTargetDown
+        expr: up{job="node-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend monitoring target is down"
+          description: "Prometheus cannot scrape the backend /metrics endpoint for more than one minute."
+
+      - alert: PrometheusScrapeTargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus scrape target is down"
+          description: "The {{ $labels.job }} target {{ $labels.instance }} has been unavailable for more than one minute."
+
+      - alert: HighHostCPU
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "EC2 host CPU usage is above 80%"
+          description: "Host CPU usage has exceeded 80 percent for five minutes on {{ $labels.instance }}."

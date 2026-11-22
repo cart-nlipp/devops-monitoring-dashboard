@@ -17,39 +17,72 @@ services:
     image: prom/prometheus
     container_name: prometheus
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-    configs:
-      - source: prometheus_config
-        target: /etc/prometheus/prometheus.yml
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+    depends_on:
+      - alertmanager
 
   grafana:
     image: grafana/grafana
     container_name: grafana
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     depends_on:
       - prometheus
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?Set GRAFANA_PASSWORD in .env}
 
-  node-exporter:                          
-    image: prom/node-exporter:v1.8.2      
-    container_name: node-exporter        
-    ports:                                
-      - "9100:9100"                       
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter
+    ports:
+      - "127.0.0.1:9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
 
-configs:
-  prometheus_config:
-    content: |
-      global:
-        scrape_interval: 15s
-      scrape_configs:
-        - job_name: 'node-backend'
-          static_configs:
-            - targets: ['dashboard-backend:5000']
-        - job_name: 'node-exporter'       
-          static_configs:                   
-            - targets: ['node-exporter:9100']  
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: cadvisor
+    ports:
+      - "127.0.0.1:8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /dev/disk:/dev/disk:ro
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    container_name: alertmanager
+    ports:
+      - "127.0.0.1:9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    environment:
+      GMAIL_SENDER: ${GMAIL_SENDER:?Set GMAIL_SENDER in .env}
+      GMAIL_RECIPIENT: ${GMAIL_RECIPIENT:?Set GMAIL_RECIPIENT in .env}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:?Set GMAIL_APP_PASSWORD in .env}
+    entrypoint:
+      - /bin/sh
+      - -ec
+    command:
+      - |
+        sed \
+          -e "s|__GMAIL_SENDER__|$${GMAIL_SENDER}|g" \
+          -e "s|__GMAIL_RECIPIENT__|$${GMAIL_RECIPIENT}|g" \
+          -e "s|__GMAIL_APP_PASSWORD__|$${GMAIL_APP_PASSWORD}|g" \
+          /etc/alertmanager/alertmanager.yml > /tmp/alertmanager.yml
+        exec /bin/alertmanager --config.file=/tmp/alertmanager.yml
